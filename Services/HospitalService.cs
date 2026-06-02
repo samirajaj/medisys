@@ -28,6 +28,16 @@ public class HospitalService
         return Doctors.CountResidents();
     }
 
+    public Doctor? FindDoctor(int doctorId)
+    {
+        return Doctors.Find(doctorId);
+    }
+
+    public IEnumerable<Doctor> GetAllDoctors()
+    {
+        return Doctors.GetAll();
+    }
+
     public bool PromoteResidentDoctor(int doctorId)
     {
         Doctor? doctor = Doctors.Find(doctorId);
@@ -53,6 +63,16 @@ public class HospitalService
     #endregion
 
     #region Patients
+
+    public IEnumerable<Patient> GetAllPatients()
+    {
+        return Patients.GetAll();
+    }
+
+    public Patient? FindPatient(int patientId)
+    {
+        return Patients.Find(patientId);
+    }
 
     public void AddPatient(Patient patient)
     {
