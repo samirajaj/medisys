@@ -1,2 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+using Medisys.Services;
+using Medisys.UI;
+
+var consoleMenu = new ConsoleMenu(new HospitalService());
+
+consoleMenu.Run();

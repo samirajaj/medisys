@@ -1,5 +1,6 @@
 ﻿using Medisys.Models.Doctors;
 using Medisys.Models.Patients;
+using Medisys.Models.Treatments;
 using Medisys.Services;
 
 namespace Medisys.UI;
@@ -281,10 +282,294 @@ public class ConsoleMenu(HospitalService hospitalService)
 
     private void ShowTreatmentsMenu()
     {
+        bool back = false;
+
+        while (!back)
+        {
+            int choice = Menu.Show(
+                title: "TREATMENTS",
+                options:
+                [
+                    "Add Treatment",
+                    "Show Patient Treatments",
+                    "Back"
+                ]);
+
+            switch (choice)
+            {
+                case 1:
+                    AddTreatment();
+                    break;
+
+                case 2:
+                    ShowPatientTreatments();
+                    break;
+
+                default:
+                    back = true;
+                    break;
+            }
+        }
+    }
+
+    private void ShowPatientTreatments()
+    {
+        Console.Clear();
+
+        Console.Write("Patient Id: ");
+
+        if (!int.TryParse(Console.ReadLine(), out int patientId))
+        {
+            Console.WriteLine("Invalid Id.");
+            Pause();
+            return;
+        }
+
+        IEnumerable<Treatment> treatments =
+            _hospitalService.GetPatientTreatments(patientId);
+
+        Console.WriteLine();
+
+        foreach (Treatment treatment in treatments)
+        {
+            treatment.Display();
+        }
+
+        Pause();
+    }
+
+    private void AddTreatment()
+    {
+        Console.Clear();
+
+        Console.Write("Patient Id: ");
+
+        if (!int.TryParse(Console.ReadLine(), out int patientId))
+        {
+            Console.WriteLine("Invalid Id.");
+            Pause();
+            return;
+        }
+
+        Patient? patient =
+            _hospitalService.FindPatient(patientId);
+
+        if (patient is null)
+        {
+            Console.WriteLine("Patient not found.");
+            Pause();
+            return;
+        }
+
+        int choice = Menu.Show(
+            title: "TREATMENT TYPE",
+            options:
+            [
+                "External Treatment",
+            "Internal Treatment",
+            "Back"
+            ]);
+
+        switch (choice)
+        {
+            case 1:
+                AddExternalTreatment(patientId);
+                break;
+
+            case 2:
+                AddInternalTreatment(patientId);
+                break;
+        }
+        void AddExternalTreatment(int patientId)
+        {
+            Console.Clear();
+
+            Console.Write("Treatment Id: ");
+            int treatmentId = int.Parse(Console.ReadLine()!);
+
+            Console.Write("Cost: ");
+            decimal cost = decimal.Parse(Console.ReadLine()!);
+
+            Console.Write("Clinic Number: ");
+            int clinicNumber = int.Parse(Console.ReadLine()!);
+
+            Console.Write("Doctor Id: ");
+            int doctorId = int.Parse(Console.ReadLine()!);
+
+            Doctor? doctor =
+                _hospitalService.FindDoctor(doctorId);
+
+            if (doctor is null)
+            {
+                Console.WriteLine("Doctor not found.");
+                Pause();
+                return;
+            }
+
+            ExternalTreatment treatment = new(
+                treatmentId,
+                patientId,
+                DateTime.Now,
+                cost,
+                clinicNumber,
+                doctor);
+
+            bool added =
+                _hospitalService.AddTreatment(patientId, treatment);
+
+            Console.WriteLine(
+                added
+                    ? "Treatment added successfully."
+                    : "Failed to add treatment.");
+
+            Pause();
+        }
+
+        void AddInternalTreatment(int patientId)
+        {
+            Console.Clear();
+
+            Console.Write("Treatment Id: ");
+            int treatmentId = int.Parse(Console.ReadLine()!);
+
+            Console.Write("Cost: ");
+            decimal cost = decimal.Parse(Console.ReadLine()!);
+
+            Console.Write("Department Id: ");
+            int departmentId = int.Parse(Console.ReadLine()!);
+
+            InternalTreatment treatment = new(
+                treatmentId,
+                patientId,
+                DateTime.Now,
+                cost,
+                departmentId);
+
+            Console.Write("Number Of Supervisors: ");
+
+            int count = int.Parse(Console.ReadLine()!);
+
+            for (int i = 0; i < count; i++)
+            {
+                Console.Write($"Supervisor #{i + 1} Id: ");
+
+                int doctorId = int.Parse(Console.ReadLine()!);
+
+                Doctor? doctor =
+                    _hospitalService.FindDoctor(doctorId);
+
+                if (doctor is not null)
+                {
+                    treatment.Supervisors.Add(doctor);
+                }
+            }
+
+            bool added =
+                _hospitalService.AddTreatment(patientId, treatment);
+
+            Console.WriteLine(
+                added
+                    ? "Treatment added successfully."
+                    : "Failed to add treatment.");
+
+            Pause();
+        }
     }
 
     private void ShowReportsMenu()
     {
+        bool back = false;
+
+        while (!back)
+        {
+            int choice = Menu.Show(
+                title: "REPORTS",
+                options:
+                [
+                    "Patients Treated During Period",
+                    "Count Patients In Department",
+                    "Back"
+                ]);
+
+            switch (choice)
+            {
+                case 1:
+                    ShowPatientsTreatedDuringPeriod();
+                    break;
+
+                case 2:
+                    CountPatientsInDepartment();
+                    break;
+
+                default:
+                    back = true;
+                    break;
+            }
+        }
+        void ShowPatientsTreatedDuringPeriod()
+        {
+            Console.Clear();
+
+            Console.Write("Start Date (yyyy-MM-dd): ");
+            DateTime startDate =
+                DateTime.Parse(Console.ReadLine()!);
+
+            Console.Write("End Date (yyyy-MM-dd): ");
+            DateTime endDate =
+                DateTime.Parse(Console.ReadLine()!);
+
+            var records =
+                _hospitalService.GetPatientsTreatedDuringPeriod(
+                    startDate,
+                    endDate);
+
+            Console.WriteLine();
+
+            foreach (var record in records)
+            {
+                Console.WriteLine(
+                    $"Patient: {record.Patient.Name}");
+
+                Console.WriteLine(
+                    $"Department: {record.Treatment.DepartmentId}");
+
+                Console.WriteLine(
+                    $"Treatment Date: {record.Treatment.TreatmentDate:d}");
+
+                Console.WriteLine(new string('-', 40));
+            }
+
+            Pause();
+        }
+        void CountPatientsInDepartment()
+        {
+            Console.Clear();
+
+            Console.Write("Department Id: ");
+            int departmentId =
+                int.Parse(Console.ReadLine()!);
+
+            Console.Write("Start Date (yyyy-MM-dd): ");
+            DateTime startDate =
+                DateTime.Parse(Console.ReadLine()!);
+
+            Console.Write("End Date (yyyy-MM-dd): ");
+            DateTime endDate =
+                DateTime.Parse(Console.ReadLine()!);
+
+            int count =
+                _hospitalService.CountPatientsInDepartment(
+                    departmentId,
+                    startDate,
+                    endDate);
+
+            Console.WriteLine();
+
+            Console.WriteLine(
+                $"Patients Count: {count}");
+
+            Pause();
+        }
     }
 
     private void SaveData()
